@@ -8,12 +8,22 @@ const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 /**
- * Per-visitor memory isolation.
+ * Per-visitor memory separation.
  *
- * This template has no user accounts, so the session cookie stands in for an
- * identity. In a real app, derive the namespace from your authenticated user
- * ID instead, and never share one delegate key across tenants that should not
- * read each other's memories.
+ * A namespace is a data-organization boundary, not a security boundary: the
+ * delegate key can read and write every namespace under the account, so
+ * separation depends entirely on the server choosing the namespace. This file
+ * is the only place that does, and it never reads one from the request body.
+ *
+ * The multi-tenant guidance says to derive the namespace from an
+ * authenticated user ID and to keep it stable — explicitly, never from a
+ * session ID. This template has no accounts, so the cookie is the closest
+ * stand-in available: server-issued, HTTP-only, and persisted for 30 days so
+ * it stays stable across visits. Clearing cookies or switching browsers does
+ * start a fresh namespace, which is the cost of shipping a demo with no
+ * sign-in. In a real app, use the authenticated user ID.
+ *
+ * https://docs.wal.app/walrus-memory/sdk/cookbook-multi-tenant
  */
 export async function getSessionNamespace(): Promise<string> {
   const store = await cookies();

@@ -1,8 +1,9 @@
 import { gateway } from "@ai-sdk/gateway";
 import { withMemWal } from "@mysten-incubation/memwal/ai";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
+import { after } from "next/server";
 
-import { memwalConfig } from "@/lib/memwal";
+import { memwalCredentials } from "@/lib/memwal";
 import { getSessionNamespace } from "@/lib/session";
 
 /**
@@ -16,16 +17,29 @@ const MODEL_ID = process.env.MODEL_ID ?? "openai/gpt-4o-mini";
 
 export async function POST(request: Request) {
   const { messages }: { messages: UIMessage[] } = await request.json();
-  const namespace = await getSessionNamespace();
 
-  // `withMemWal` recalls relevant memories before each generation and saves
-  // new facts afterwards, so the chat route needs no memory code of its own.
-  const model = withMemWal(gateway(MODEL_ID), {
-    ...memwalConfig(namespace),
-    maxMemories: 5,
-    autoSave: true,
-    debug: process.env.NODE_ENV !== "production",
-  });
+  const credentials = memwalCredentials();
+
+  // Degrade instead of failing: an unconfigured deploy still answers, it just
+  // answers without memory.
+  const model = credentials
+    ? withMemWal(gateway(MODEL_ID), {
+        ...credentials,
+        namespace: await getSessionNamespace(),
+        maxMemories: 5,
+        autoSave: true,
+        debug: process.env.NODE_ENV !== "production",
+      })
+    : gateway(MODEL_ID);
+
+  if (credentials) {
+    // `autoSave` runs `analyze()` fire-and-forget. On a serverless function
+    // the instance can suspend as soon as the response finishes, which drops
+    // the write — so hold the save open past the response.
+    after(async () => {
+      await (model as { flush?: () => Promise<void> }).flush?.();
+    });
+  }
 
   const result = streamText({
     model,

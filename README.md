@@ -14,8 +14,8 @@ deployUrl: https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%
 # Walrus Memory Agent
 
 An AI chat agent that remembers the people who talk to it. Memory is stored on
-[Walrus](https://docs.wal.app), encrypted with Seal, and owned by your Walrus
-Memory account rather than by the model provider.
+[Walrus](https://docs.wal.app), encrypted with Seal, and held by a Walrus
+Memory account you own rather than by the model provider.
 
 Built with the [Vercel AI SDK](https://ai-sdk.dev) and
 [`withMemWal`](https://docs.wal.app/walrus-memory/sdk/ai-integration), the
@@ -86,15 +86,31 @@ system instruction telling the model never to follow instructions found inside
 recalled text. After each call it extracts and saves new facts in the
 background.
 
-### Memory is scoped per visitor
+### Memory is separated per visitor
 
 Recall is scoped per account **plus namespace**. This template has no user
-accounts, so `lib/session.ts` issues a session cookie and derives a namespace
-from it, which keeps one visitor's memories out of another's.
+accounts, so `lib/session.ts` issues an HTTP-only session cookie and derives
+the namespace from it.
 
-In a real application, derive the namespace from your authenticated user ID
-instead, and never share one delegate key across tenants that should not read
-each other's memories.
+A namespace is a **data-organization boundary, not a security boundary**. The
+delegate key can read and write every namespace under the account, so
+separation holds only because the server picks the namespace and never accepts
+one from the request. The [multi-tenant
+guidance](https://docs.wal.app/walrus-memory/sdk/cookbook-multi-tenant) also
+says to keep a namespace stable and never derive it from a session ID — this
+template deviates knowingly, because a demo with no sign-in has nothing more
+stable to use. In a real application, derive it from your authenticated user
+ID, and never share one delegate key across tenants that should not read each
+other's memories.
+
+### What the relayer sees
+
+This template uses the default, relayer-backed client, where the relayer
+handles embedding, Seal encryption, upload, and search. That means the relayer
+processes your plaintext before encrypting it. If you need the relayer never
+to see plaintext, use
+[`MemWalManual`](https://docs.wal.app/walrus-memory/sdk/usage/memwal-manual),
+which embeds and encrypts client-side at the cost of holding your own keys.
 
 ### Two constraints worth keeping
 
@@ -104,7 +120,12 @@ each other's memories.
   returns the prompt unchanged and the model answers without memory. The
   memory panel surfaces recall errors, and `debug: true` logs them in
   development, so a misconfigured relayer or account does not look like a
-  working deploy.
+  working deploy. Missing credentials degrade the same way: the chat still
+  answers, without memory.
+- **Auto-save is held open past the response.** `autoSave` runs `analyze()`
+  fire-and-forget, and a serverless instance can suspend the moment the
+  response finishes. The chat route calls the middleware's `flush()` inside
+  `after()` so the write is not dropped.
 
 ## Project structure
 
