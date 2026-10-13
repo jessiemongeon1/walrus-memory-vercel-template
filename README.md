@@ -6,9 +6,9 @@ description: An AI chat agent with persistent, encrypted memory that the user ow
 framework: Next.js
 type: AI
 css: Tailwind
-githubUrl: https://github.com/MystenLabs/walrus-memory-vercel-template
+githubUrl: https://github.com/jessiemongeon1/walrus-memory-vercel-template
 demoUrl: https://walrus-memory-agent.vercel.app
-deployUrl: https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FMystenLabs%2Fwalrus-memory-vercel-template&env=MEMWAL_PRIVATE_KEY,MEMWAL_ACCOUNT_ID,MEMWAL_SERVER_URL&envDescription=Walrus%20Memory%20credentials%20from%20the%20dashboard&envLink=https%3A%2F%2Fdocs.wal.app%2Fwalrus-memory%2Fsdk%2Fheadless-setup&project-name=walrus-memory-agent&repository-name=walrus-memory-agent
+deployUrl: https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fjessiemongeon1%2Fwalrus-memory-vercel-template&env=MEMWAL_PRIVATE_KEY,MEMWAL_ACCOUNT_ID,MEMWAL_SERVER_URL&envDescription=Walrus%20Memory%20credentials%20from%20the%20dashboard&envLink=https%3A%2F%2Fdocs.wal.app%2Fwalrus-memory%2Fsdk%2Fheadless-setup&project-name=walrus-memory-agent&repository-name=walrus-memory-agent
 ---
 
 # Walrus Memory Agent
@@ -25,14 +25,15 @@ plumbing of its own.
 
 ## Demo
 
-https://walrus-memory-agent.vercel.app
+The demo URL is filled in after the first production deploy, and it must be
+live before this template is submitted to Vercel.
 
 Tell the agent something about yourself, reload the page, and ask it what it
 knows. The memory panel shows what recall returns for your session.
 
 ## Deploy your own
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FMystenLabs%2Fwalrus-memory-vercel-template&env=MEMWAL_PRIVATE_KEY,MEMWAL_ACCOUNT_ID,MEMWAL_SERVER_URL&envDescription=Walrus%20Memory%20credentials%20from%20the%20dashboard&envLink=https%3A%2F%2Fdocs.wal.app%2Fwalrus-memory%2Fsdk%2Fheadless-setup&project-name=walrus-memory-agent&repository-name=walrus-memory-agent)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fjessiemongeon1%2Fwalrus-memory-vercel-template&env=MEMWAL_PRIVATE_KEY,MEMWAL_ACCOUNT_ID,MEMWAL_SERVER_URL&envDescription=Walrus%20Memory%20credentials%20from%20the%20dashboard&envLink=https%3A%2F%2Fdocs.wal.app%2Fwalrus-memory%2Fsdk%2Fheadless-setup&project-name=walrus-memory-agent&repository-name=walrus-memory-agent)
 
 ## Get your credentials
 
