@@ -12,6 +12,7 @@ export function MemoryPanel() {
   const [query, setQuery] = useState("");
   const [memories, setMemories] = useState<Memory[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [truncated, setTruncated] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const load = useCallback(async (search: string) => {
@@ -24,6 +25,7 @@ export function MemoryPanel() {
       const response = await fetch(url);
       const data = await response.json();
       setMemories(data.memories ?? []);
+      setTruncated(Boolean(data.truncated));
       if (data.error) setError(data.error);
     } catch {
       setError("Could not reach the memory relayer.");
@@ -84,6 +86,12 @@ export function MemoryPanel() {
           </li>
         ))}
       </ul>
+
+      {truncated && (
+        <p className="text-xs opacity-60">
+          Showing the first 10 matches; there may be more.
+        </p>
+      )}
 
       {error && (
         <p className="text-xs text-red-600 dark:text-red-400">{error}</p>

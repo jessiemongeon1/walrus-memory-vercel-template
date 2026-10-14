@@ -67,9 +67,11 @@ Deployments on Vercel authenticate to the AI Gateway through OIDC, so
 
 ## How it works
 
-`app/api/chat/route.ts` wraps a gateway model with the memory middleware:
+`lib/memwal.ts` wraps a gateway model with the memory middleware, and
+`app/api/chat/route.ts` holds the background save open past the response:
 
 ```ts
+// lib/memwal.ts
 const model = withMemWal(gateway(MODEL_ID), {
   key: process.env.MEMWAL_PRIVATE_KEY!,
   accountId: process.env.MEMWAL_ACCOUNT_ID!,
@@ -77,6 +79,11 @@ const model = withMemWal(gateway(MODEL_ID), {
   namespace,
   maxMemories: 5,
   autoSave: true,
+});
+
+// app/api/chat/route.ts
+after(async () => {
+  await model.flush?.();
 });
 ```
 
@@ -130,9 +137,11 @@ which embeds and encrypts client-side at the cost of holding your own keys.
 ## Project structure
 
 ```
-app/api/chat/route.ts       chat endpoint, model wrapped with withMemWal
+middleware.ts               issues the session cookie before handlers run
+app/api/chat/route.ts       chat endpoint, streaming and background save
 app/api/memories/route.ts   recall, backing the memory panel
-lib/memwal.ts               credential loading and client construction
+lib/memwal.ts               credentials, client, and memory-wrapped models
+lib/session-cookie.ts       cookie name, validation, and namespace shape
 lib/session.ts              per-visitor namespace from a session cookie
 components/chat.tsx         chat UI
 components/memory-panel.tsx recall UI

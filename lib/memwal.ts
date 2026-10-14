@@ -1,6 +1,8 @@
 import "server-only";
 
+import { gateway } from "@ai-sdk/gateway";
 import { MemWal } from "@mysten-incubation/memwal";
+import { withMemWal } from "@mysten-incubation/memwal/ai";
 
 /**
  * Walrus Memory credentials come from the dashboard:
@@ -47,4 +49,48 @@ export function memwalClient(): MemWal | null {
 
   client ??= MemWal.create(credentials);
   return client;
+}
+
+const MODEL_ID = process.env.MODEL_ID ?? "openai/gpt-4o-mini";
+
+/**
+ * Memory-wrapped models, cached per namespace.
+ *
+ * `withMemWal` builds its own client around a fixed namespace, so a model
+ * built per request would repeat the `/version` and `/config` handshake on
+ * every message. Caching keeps that cost to the first message per visitor on
+ * each warm instance. The map is bounded because a busy instance would
+ * otherwise hold one client per visitor it has ever served.
+ */
+const MAX_CACHED_MODELS = 64;
+const models = new Map<string, unknown>();
+
+export function memoryModel(namespace: string): unknown {
+  const credentials = memwalCredentials();
+  if (!credentials) return null;
+
+  const cached = models.get(namespace);
+  if (cached) return cached;
+
+  const model = withMemWal(gateway(MODEL_ID), {
+    ...credentials,
+    namespace,
+    maxMemories: 5,
+    autoSave: true,
+    debug: process.env.NODE_ENV !== "production",
+  });
+
+  if (models.size >= MAX_CACHED_MODELS) {
+    // Map iterates in insertion order, so this drops the least recently added.
+    const oldest = models.keys().next().value;
+    if (oldest !== undefined) models.delete(oldest);
+  }
+  models.set(namespace, model);
+
+  return model;
+}
+
+/** The plain model, used when memory is not configured. */
+export function plainModel(): unknown {
+  return gateway(MODEL_ID);
 }

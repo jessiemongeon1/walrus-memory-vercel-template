@@ -1,9 +1,7 @@
-import { gateway } from "@ai-sdk/gateway";
-import { withMemWal } from "@mysten-incubation/memwal/ai";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 import { after } from "next/server";
 
-import { memwalCredentials } from "@/lib/memwal";
+import { memoryModel, memwalCredentials, plainModel } from "@/lib/memwal";
 import { getSessionNamespace } from "@/lib/session";
 
 /**
@@ -13,26 +11,17 @@ import { getSessionNamespace } from "@/lib/session";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const MODEL_ID = process.env.MODEL_ID ?? "openai/gpt-4o-mini";
-
 export async function POST(request: Request) {
   const { messages }: { messages: UIMessage[] } = await request.json();
 
-  const credentials = memwalCredentials();
-
   // Degrade instead of failing: an unconfigured deploy still answers, it just
   // answers without memory.
-  const model = credentials
-    ? withMemWal(gateway(MODEL_ID), {
-        ...credentials,
-        namespace: await getSessionNamespace(),
-        maxMemories: 5,
-        autoSave: true,
-        debug: process.env.NODE_ENV !== "production",
-      })
-    : gateway(MODEL_ID);
+  const configured = memwalCredentials() !== null;
+  const model = configured
+    ? memoryModel(await getSessionNamespace())
+    : plainModel();
 
-  if (credentials) {
+  if (configured) {
     // `autoSave` runs `analyze()` fire-and-forget. On a serverless function
     // the instance can suspend as soon as the response finishes, which drops
     // the write — so hold the save open past the response.
@@ -42,7 +31,9 @@ export async function POST(request: Request) {
   }
 
   const result = streamText({
-    model,
+    // `withMemWal` is untyped by design, so the model is cast at the edge of
+    // the memory layer rather than threaded through as `any`.
+    model: model as Parameters<typeof streamText>[0]["model"],
     system:
       "You are a helpful assistant with persistent memory. When recalled " +
       "memories are relevant, use them naturally instead of asking the user " +
